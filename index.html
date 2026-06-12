@@ -1,0 +1,243 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1" />
+<title>Emoji Runner — One-Tap Endless Runner for iPhone & iPad</title>
+<meta name="description" content="Emoji Runner is a one-tap endless runner. Tap to jump, grab rockets to fly, collect diamonds. Free on iPhone, iPad, Mac, and Apple Vision Pro." />
+<meta name="theme-color" content="#07071a" />
+<link rel="icon" type="image/png" href="/assets/icon.png" />
+<link rel="apple-touch-icon" href="/assets/icon.png" />
+<link rel="canonical" href="https://emojirunner.com/" />
+<meta property="og:title" content="Emoji Runner" />
+<meta property="og:description" content="One-tap endless runner. Tap to jump. Grab rockets to fly. Free on the App Store." />
+<meta property="og:image" content="https://emojirunner.com/assets/screenshot-hero.png" />
+<meta property="og:url" content="https://emojirunner.com/" />
+<meta property="og:type" content="website" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="/style.css" />
+</head>
+<body>
+
+<!-- Animated Starfield -->
+<canvas id="starfield" aria-hidden="true"></canvas>
+
+<!-- Nav -->
+<header class="nav">
+  <a href="#top" class="brand">
+    <img src="/assets/icon.png" alt="" width="36" height="36" />
+    <span>Emoji Runner</span>
+  </a>
+  <button class="hamburger" aria-label="Open menu" aria-expanded="false">
+    <span></span>
+  </button>
+  <nav class="nav-links">
+    <a href="#features">Features</a>
+    <a href="#gameplay">Gameplay</a>
+    <a href="#character">Character</a>
+    <a href="/privacy.html">Privacy</a>
+    <a href="/support.html">Support</a>
+  </nav>
+  <a class="nav-dl" href="https://apps.apple.com/us/app/emoji-runner/id973972975" target="_blank" rel="noopener">Download</a>
+</header>
+
+<main id="top">
+
+  <!-- ===== HERO ===== -->
+  <section class="hero">
+    <div class="gradient-top"></div>
+    <div class="hero-inner container">
+      <div class="hero-copy">
+        <div style="animation: slideUp 0.6s var(--ease) forwards;">
+          <h1 style="margin-bottom: 1rem;">Tap. Jump.<br><span class="text-accent glow-accent">Survive.</span></h1>
+          <p class="lede">Tap to jump. Grab rockets to fly. Outrun the obstacles as long as you can — in the classic emoji runner, rebuilt for modern iOS.</p>
+          <div class="hero-cta">
+            <a href="https://apps.apple.com/us/app/emoji-runner/id973972975" class="appstore-badge" target="_blank" rel="noopener" aria-label="Download on the App Store">
+              <svg viewBox="0 0 120 40" width="160" height="48" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                <rect x="0.5" y="0.5" width="119" height="39" rx="7" fill="black" stroke="white" stroke-opacity="0.55"/>
+                <g fill="white">
+                  <path d="M22 13.5c-0.8 0.9-2.1 1.7-3.4 1.6-0.2-1.3 0.5-2.7 1.3-3.5 0.8-1 2.2-1.7 3.4-1.7 0.1 1.4-0.5 2.7-1.3 3.6zm1.3 2c-1.9-0.1-3.5 1.1-4.4 1.1-0.9 0-2.3-1-3.8-1-1.9 0-3.7 1.1-4.7 2.9-2 3.5-0.5 8.6 1.5 11.4 0.9 1.4 2 2.9 3.5 2.8 1.4-0.1 1.9-0.9 3.6-0.9 1.7 0 2.2 0.9 3.7 0.9 1.5 0 2.5-1.4 3.4-2.8 1-1.6 1.5-3.1 1.5-3.2-0.1 0-2.9-1.1-3-4.4 0-2.8 2.3-4.1 2.4-4.2-1.3-2-3.3-2.2-4-2.2z"/>
+                  <text x="36" y="17" font-family="Helvetica, Arial, sans-serif" font-size="7" fill="white" opacity="0.85">Download on the</text>
+                  <text x="36" y="30" font-family="Helvetica, Arial, sans-serif" font-size="14" font-weight="600" fill="white">App Store</text>
+                </g>
+              </svg>
+            </a>
+            <span class="hero-sub">Free on iPhone and iPad</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="hero-anim">
+        <div class="hero-glow"></div>
+        <div class="hero-character" id="heroSprite">
+          <img src="/assets/character-1.png" alt="Emoji Runner character" />
+        </div>
+        <div class="hero-floater floater-rocket"><img src="/assets/rocket.png" alt="" /></div>
+        <div class="hero-floater floater-diamond"><img src="/assets/diamond.png" alt="" /></div>
+      </div>
+    </div>
+
+    <div class="scroll-hint" aria-hidden="true">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12l7 7 7-7"/></svg>
+    </div>
+  </section>
+
+  <!-- ===== FEATURES ===== -->
+  <section id="features" class="features">
+    <div class="gradient-top"></div>
+    <div class="container" style="position:relative;z-index:10;">
+      <div class="reveal">
+        <h2 class="center" style="margin-bottom:0.5rem;"><span class="text-warm glow-warm">Built</span> <span class="text-accent glow-accent">Simple.</span></h2>
+        <p class="lede center" style="margin-bottom:3.5rem;">One tap, infinite arcade fun. The classic mechanic that made the original a fan favorite — modernized, no fluff.</p>
+      </div>
+
+      <div class="feature-grid">
+        <article class="feature-card glass-card reveal">
+          <div class="feature-icon">👆</div>
+          <h3>One-Tap Controls</h3>
+          <p>Tap anywhere to jump. That's the whole input layer. Easy to pick up, impossible to master.</p>
+        </article>
+        <article class="feature-card glass-card reveal">
+          <div class="feature-icon">🚀</div>
+          <h3>Rocket Boosters</h3>
+          <p>Grab a rocket and fly. Five seconds of invincibility and bonus speed through the sky.</p>
+        </article>
+        <article class="feature-card glass-card reveal">
+          <div class="feature-icon">⭐️</div>
+          <h3>Endless Run</h3>
+          <p>An endless side-scroller. Difficulty ramps as you survive — the longer you run, the faster the world flies past.</p>
+        </article>
+        <article class="feature-card glass-card reveal">
+          <div class="feature-icon">💎</div>
+          <h3>Collect Diamonds</h3>
+          <p>Glittering rewards above the run. Climb the leaderboard with every grab.</p>
+        </article>
+        <article class="feature-card glass-card reveal">
+          <div class="feature-icon">📳</div>
+          <h3>Tactile Haptics</h3>
+          <p>Subtle haptic feedback on every jump, every diamond, every crash. Built for the iPhone in your pocket.</p>
+        </article>
+        <article class="feature-card glass-card reveal">
+          <div class="feature-icon">🛡️</div>
+          <h3>No Ads. No Tracking.</h3>
+          <p>Zero advertising, zero analytics, zero data collection. Your high score lives on your device alone.</p>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== GAMEPLAY ===== -->
+  <section id="gameplay" class="gameplay">
+    <div class="gradient-top"></div>
+    <div class="container" style="position:relative;z-index:10;">
+      <div class="reveal">
+        <h2 class="center" style="margin-bottom:0.5rem;"><span class="text-accent glow-accent">Gameplay</span></h2>
+        <p class="lede center" style="margin-bottom:3.5rem;">A side-scrolling endless runner. Jump the obstacles. Snatch the diamonds. Catch a rocket and launch.</p>
+      </div>
+
+      <div class="reveal">
+        <div class="iphone-frame">
+          <div class="iphone-screen">
+            <img src="/assets/screenshot-hero.png" alt="Emoji Runner gameplay — jumping over obstacles and collecting diamonds" loading="lazy" />
+          </div>
+        </div>
+      </div>
+
+      <div class="stats-row reveal">
+        <div class="stat">
+          <div class="stat-value glow-accent">1-Tap</div>
+          <div class="stat-label">Controls</div>
+        </div>
+        <div class="stat">
+          <div class="stat-value glow-accent">60</div>
+          <div class="stat-label">FPS</div>
+        </div>
+        <div class="stat">
+          <div class="stat-value glow-accent">Offline</div>
+          <div class="stat-label">First</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== CHARACTER ===== -->
+  <section id="character" class="character-section">
+    <div class="container" style="position:relative;z-index:10;">
+      <div class="reveal">
+        <p class="eyebrow center">MEET THE RUNNER</p>
+        <h2 class="center" style="margin-bottom:0.5rem;">Your <span class="text-warm glow-warm">favorite</span> emoji.</h2>
+        <p class="lede center" style="margin-bottom:2.5rem;">Enhanced art. Same lovable character. Ready to run.</p>
+      </div>
+
+      <div class="character-strip">
+        <div class="char-frame char-animated glass-card reveal" id="animatedChar">
+          <img src="/assets/character-1.png" alt="Running animation" id="charAnim" />
+        </div>
+        <div class="char-frame glass-card reveal"><img src="/assets/character-1.png" alt="Pose 1" /></div>
+        <div class="char-frame glass-card reveal"><img src="/assets/character-2.png" alt="Pose 2" /></div>
+        <div class="char-frame glass-card reveal"><img src="/assets/character-3.png" alt="Pose 3" /></div>
+        <div class="char-frame glass-card reveal"><img src="/assets/character-4.png" alt="Pose 4" /></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== CTA ===== -->
+  <section class="cta-section">
+    <div class="gradient-top"></div>
+    <div class="container" style="position:relative;z-index:10;">
+      <div class="reveal">
+        <div class="cta-character">
+          <img src="/assets/character-3.png" alt="Emoji Runner" />
+        </div>
+      </div>
+      <div class="reveal">
+        <h2><span class="text-warm glow-warm">Ready</span> to <span class="text-accent glow-accent">Run?</span></h2>
+        <p class="lede center">Download Emoji Runner and begin your endless run. Free on iPhone and iPad.</p>
+      </div>
+      <div class="reveal">
+        <a href="https://apps.apple.com/us/app/emoji-runner/id973972975" class="appstore-badge" target="_blank" rel="noopener" aria-label="Download on the App Store">
+          <svg viewBox="0 0 120 40" width="180" height="54" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+            <rect x="0.5" y="0.5" width="119" height="39" rx="7" fill="black" stroke="white" stroke-opacity="0.55"/>
+            <g fill="white">
+              <path d="M22 13.5c-0.8 0.9-2.1 1.7-3.4 1.6-0.2-1.3 0.5-2.7 1.3-3.5 0.8-1 2.2-1.7 3.4-1.7 0.1 1.4-0.5 2.7-1.3 3.6zm1.3 2c-1.9-0.1-3.5 1.1-4.4 1.1-0.9 0-2.3-1-3.8-1-1.9 0-3.7 1.1-4.7 2.9-2 3.5-0.5 8.6 1.5 11.4 0.9 1.4 2 2.9 3.5 2.8 1.4-0.1 1.9-0.9 3.6-0.9 1.7 0 2.2 0.9 3.7 0.9 1.5 0 2.5-1.4 3.4-2.8 1-1.6 1.5-3.1 1.5-3.2-0.1 0-2.9-1.1-3-4.4 0-2.8 2.3-4.1 2.4-4.2-1.3-2-3.3-2.2-4-2.2z"/>
+              <text x="36" y="17" font-family="Helvetica, Arial, sans-serif" font-size="7" fill="white" opacity="0.85">Download on the</text>
+              <text x="36" y="30" font-family="Helvetica, Arial, sans-serif" font-size="14" font-weight="600" fill="white">App Store</text>
+            </g>
+          </svg>
+        </a>
+        <p class="cta-req">Requires iOS 8.0+, iPadOS, macOS 11+ (Apple Silicon), or visionOS 1.0+. Universal app.</p>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<!-- Footer -->
+<footer class="footer">
+  <div class="container footer-inner">
+    <div class="footer-brand">
+      <img src="/assets/icon.png" alt="" width="32" height="32" />
+      <div>
+        <div class="footer-title">Emoji Runner</div>
+        <div class="footer-sub">© <span id="year">2026</span> Central Domains LLC</div>
+      </div>
+    </div>
+    <nav class="footer-links">
+      <a href="/privacy.html">Privacy Policy</a>
+      <a href="/support.html">Support</a>
+      <a href="https://apps.apple.com/us/app/emoji-runner/id973972975" target="_blank" rel="noopener">App Store</a>
+    </nav>
+  </div>
+</footer>
+
+<script src="/script.js"></script>
+<style>
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(30px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+</style>
+</body>
+</html>
