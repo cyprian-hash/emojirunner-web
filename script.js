@@ -1,20 +1,17 @@
-/* Emoji Runner — Marketing Site Scripts
-   Inspired by jumpalien.com: canvas starfield, scroll-reveal,
-   sprite cycling, parallax mouse effects. */
+/* ═══════════════════════════════════════════════════════════════
+   Emoji Runner — Site Scripts
+   Canvas starfield, scroll-reveal, hero sprite cycling, hamburger
+   ═══════════════════════════════════════════════════════════════ */
 
 (function () {
   "use strict";
 
-  // ===== Dynamic Year =====
-  const yearEl = document.getElementById("year");
-  if (yearEl) yearEl.textContent = new Date().getFullYear();
-
-  // ===== Canvas Starfield (matching jumpalien.com) =====
+  // ===== Canvas Starfield =====
   const canvas = document.getElementById("starfield");
   if (canvas) {
     const ctx = canvas.getContext("2d");
     let stars = [];
-    let animId;
+    let rafId;
 
     function resize() {
       canvas.width = window.innerWidth;
@@ -24,38 +21,47 @@
 
     function initStars() {
       stars = [];
-      const count = Math.floor((canvas.width * canvas.height) / 7000);
+      const area = canvas.width * canvas.height;
+      const count = Math.min(Math.floor(area / 6000), 300);
       for (let i = 0; i < count; i++) {
         stars.push({
           x: Math.random() * canvas.width,
           y: Math.random() * canvas.height,
-          size: Math.random() * 2 + 0.4,
-          speed: Math.random() * 0.3 + 0.05,
-          opacity: Math.random() * 0.8 + 0.2,
+          size: Math.random() * 1.8 + 0.3,
+          speed: Math.random() * 0.25 + 0.04,
+          baseOpacity: Math.random() * 0.7 + 0.2,
+          flickerPhase: Math.random() * Math.PI * 2,
+          flickerSpeed: Math.random() * 0.002 + 0.001,
         });
       }
     }
 
-    function animate() {
+    function animate(time) {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
+
       for (const star of stars) {
+        // Drift downward
         star.y += star.speed;
         if (star.y > canvas.height) {
-          star.y = 0;
+          star.y = -2;
           star.x = Math.random() * canvas.width;
         }
-        const flicker =
-          Math.sin(Date.now() * 0.001 * star.speed + star.x) * 0.3 + 0.7;
+
+        // Flicker effect
+        const flicker = Math.sin(time * star.flickerSpeed + star.flickerPhase) * 0.3 + 0.7;
+        const opacity = star.baseOpacity * flicker;
+
         ctx.beginPath();
         ctx.arc(star.x, star.y, star.size, 0, Math.PI * 2);
-        ctx.fillStyle = `rgba(255, 255, 255, ${star.opacity * flicker})`;
+        ctx.fillStyle = `rgba(255, 255, 255, ${opacity})`;
         ctx.fill();
       }
-      animId = requestAnimationFrame(animate);
+
+      rafId = requestAnimationFrame(animate);
     }
 
     resize();
-    animate();
+    rafId = requestAnimationFrame(animate);
     window.addEventListener("resize", resize);
   }
 
@@ -71,6 +77,7 @@
       document.body.classList.toggle("menu-open", !isOpen);
     });
 
+    // Close on link click
     navLinks.querySelectorAll("a").forEach((link) => {
       link.addEventListener("click", () => {
         hamburger.setAttribute("aria-expanded", "false");
@@ -79,6 +86,7 @@
       });
     });
 
+    // Close on Escape
     document.addEventListener("keydown", (e) => {
       if (e.key === "Escape" && navLinks.classList.contains("open")) {
         hamburger.setAttribute("aria-expanded", "false");
@@ -100,10 +108,11 @@
           }
         });
       },
-      { threshold: 0.15 }
+      { threshold: 0.12, rootMargin: "0px 0px -40px 0px" }
     );
     revealEls.forEach((el) => observer.observe(el));
   } else {
+    // Fallback: just show everything
     revealEls.forEach((el) => el.classList.add("visible"));
   }
 
@@ -120,28 +129,16 @@
       "/assets/character-2.png",
     ];
     let frame = 0;
-    sprites.forEach((s) => { const i = new Image(); i.src = s; });
+
+    // Preload
+    sprites.forEach((src) => {
+      const img = new Image();
+      img.src = src;
+    });
+
     setInterval(() => {
       frame = (frame + 1) % sprites.length;
       heroImg.src = sprites[frame];
-    }, 200);
-  }
-
-  // ===== Character Gallery Animation =====
-  const charAnim = document.getElementById("charAnim");
-  if (charAnim) {
-    const frames = [
-      "/assets/character-1.png",
-      "/assets/character-2.png",
-      "/assets/character-3.png",
-      "/assets/character-4.png",
-      "/assets/character-3.png",
-      "/assets/character-2.png",
-    ];
-    let f = 0;
-    setInterval(() => {
-      f = (f + 1) % frames.length;
-      charAnim.src = frames[f];
     }, 180);
   }
 })();

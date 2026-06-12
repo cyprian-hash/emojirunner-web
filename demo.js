@@ -1,6 +1,9 @@
-/* Emoji Runner — Interactive Playable Demo
-   A canvas-based mini-game embedded in the website gameplay section.
-   Inspired by jumpalien.com's InteractiveDemo component. */
+/* ═══════════════════════════════════════════════════════════════
+   Emoji Runner — Interactive Playable Demo
+   Canvas mini-game inside the iPhone landscape frame.
+   Uses actual game assets: character sprites, background.png,
+   diamond.png, rocket.png.
+   ═══════════════════════════════════════════════════════════════ */
 
 (function () {
   "use strict";
@@ -22,47 +25,60 @@
   let scrollX = 0;
   let isHolding = false;
   let animId;
+  let lastTime = 0;
 
   // ===== Load Assets =====
   const charImgs = [];
   for (let i = 1; i <= 4; i++) {
     const img = new Image();
-    img.src = `/assets/character-${i}.png`;
+    img.src = `/assets/emoji_runner_${i}.png`;
     charImgs.push(img);
   }
+
+  const bgImg = new Image();
+  bgImg.src = "/assets/background.png";
+
   const rocketImg = new Image();
   rocketImg.src = "/assets/rocket.png";
+
   const diamondImg = new Image();
   diamondImg.src = "/assets/diamond.png";
 
   // ===== Game Objects =====
-  const player = { x: 80, y: 0, vy: 0, w: 36, h: 40, canDouble: true, frame: 0 };
-  let stars = [], obstacles = [], rockets = [], particles = [], bgStars = [], clouds = [];
+  const player = {
+    x: 0,
+    y: 0,
+    vy: 0,
+    w: 0,
+    h: 0,
+    canDouble: true,
+    frame: 0,
+  };
+
+  let diamonds = [];
+  let obstacles = [];
+  let rockets = [];
+  let particles = [];
+  let bgOffset = 0;
+  let bgOffset2 = 0;
+  let distanceTravelled = 0;
 
   // ===== Init =====
   function resize() {
     const rect = container.getBoundingClientRect();
     width = canvas.width = rect.width;
     height = canvas.height = rect.height;
-    groundY = height - 38;
-    initBgStars();
+    groundY = height - height * 0.14;
+
+    // Scale player to screen
+    player.w = Math.max(24, Math.floor(height * 0.16));
+    player.h = Math.max(28, Math.floor(height * 0.19));
+    player.x = Math.floor(width * 0.12);
+
     resetGame();
   }
 
-  function initBgStars() {
-    bgStars = [];
-    for (let i = 0; i < 30; i++) {
-      bgStars.push({
-        x: Math.random() * width,
-        y: Math.random() * height * 0.7,
-        size: Math.random() * 1.5 + 0.5,
-        speed: Math.random() * 0.3 + 0.1,
-      });
-    }
-  }
-
   function resetGame() {
-    player.x = 80;
     player.y = groundY - player.h;
     player.vy = 0;
     player.canDouble = true;
@@ -71,37 +87,61 @@
     mode = "running";
     flightTimer = 0;
     scrollX = 0;
+    bgOffset = 0;
+    bgOffset2 = 0;
+    distanceTravelled = 0;
     gameOver = false;
     isPaused = false;
     isPlaying = false;
     isHolding = false;
-    stars = [];
+    diamonds = [];
     obstacles = [];
     rockets = [];
     particles = [];
-    clouds = [];
 
-    // Seed clouds
-    for (let i = 0; i < 4; i++) {
-      clouds.push({
-        x: i * 240 + Math.random() * 80,
-        y: 25 + Math.random() * 35,
-        w: 50 + Math.random() * 40,
-        h: 4 + Math.random() * 3,
-        speed: 0.15 + Math.random() * 0.15,
-      });
-    }
-
-    // Seed obstacles and collectibles
-    for (let i = 0; i < 4; i++) {
-      const x = 320 + i * 260;
-      stars.push({ x, y: groundY - 55 - Math.random() * 70, collected: false, pulse: Math.random() * 6 });
-      if (i > 0) {
-        obstacles.push({ x: x + 100, y: groundY - 12, size: 14 + Math.random() * 6, angle: Math.random() * Math.PI, rot: (Math.random() - 0.5) * 0.04 });
+    // Seed initial objects
+    for (let i = 0; i < 5; i++) {
+      const x = width * 0.5 + i * (width * 0.35);
+      diamonds.push(makeDiamond(x));
+      if (i > 0 && Math.random() < 0.7) {
+        obstacles.push(makeObstacle(x + width * 0.15));
       }
     }
-    rockets.push({ x: 480, y: groundY - 65, pulse: 0 });
+    rockets.push(makeRocket(width * 0.5 + 2.5 * width * 0.35));
+
     updateHUD();
+  }
+
+  function makeDiamond(x) {
+    return {
+      x: x,
+      y: groundY - player.h - 15 - Math.random() * (height * 0.35),
+      collected: false,
+      pulse: Math.random() * 6,
+    };
+  }
+
+  function makeObstacle(x) {
+    const size = Math.floor(height * 0.06) + Math.random() * (height * 0.03);
+    return {
+      x: x,
+      y: groundY - size * 0.5,
+      size: size,
+      color: pickObstacleColor(),
+    };
+  }
+
+  function makeRocket(x) {
+    return {
+      x: x,
+      y: groundY - player.h - 10 - Math.random() * (height * 0.2),
+      pulse: 0,
+    };
+  }
+
+  function pickObstacleColor() {
+    const colors = ["#e74c3c", "#c0392b", "#d35400", "#e67e22", "#8e44ad"];
+    return colors[Math.floor(Math.random() * colors.length)];
   }
 
   // ===== HUD =====
@@ -109,52 +149,67 @@
   const flyEl = document.getElementById("demo-fly");
   const overlayEl = document.getElementById("demo-overlay");
   const gameOverEl = document.getElementById("demo-gameover");
+  const finalScoreEl = document.getElementById("demo-final-score");
 
   function updateHUD() {
     if (scoreEl) scoreEl.textContent = score;
     if (flyEl) {
       flyEl.style.display = mode === "flying" ? "flex" : "none";
-      flyEl.querySelector("span:last-child").textContent = flightTimer.toFixed(1) + "s";
+      const span = flyEl.querySelector("span:last-child");
+      if (span) span.textContent = flightTimer.toFixed(1) + "s";
     }
-    if (overlayEl) overlayEl.style.display = (!isPlaying && !gameOver) ? "flex" : "none";
+    if (overlayEl)
+      overlayEl.style.display = !isPlaying && !gameOver ? "flex" : "none";
     if (gameOverEl) gameOverEl.style.display = gameOver ? "flex" : "none";
+    if (finalScoreEl && gameOver) finalScoreEl.textContent = "Score: " + score;
+  }
+
+  // ===== Game Speed =====
+  function getSpeed() {
+    const base = Math.max(1.5, height * 0.008);
+    const ramp = Math.min(distanceTravelled * 0.00004, base * 0.8);
+    const speed = base + ramp;
+    return mode === "flying" ? speed * 1.6 : speed;
   }
 
   // ===== Physics =====
   function update() {
     if (gameOver || isPaused || !isPlaying) return;
-    const scrollSpeed = mode === "flying" ? 4.2 : 2.5;
-    scrollX += scrollSpeed;
 
-    // Bg stars
-    bgStars.forEach(s => {
-      s.x -= s.speed * scrollSpeed * 0.25;
-      if (s.x < 0) s.x = width;
-    });
+    const speed = getSpeed();
+    scrollX += speed;
+    distanceTravelled += speed;
 
-    // Clouds
-    clouds.forEach(c => {
-      c.x -= c.speed * scrollSpeed * 0.3;
-      if (c.x < -c.w) { c.x = width + Math.random() * 50; c.y = 25 + Math.random() * 35; }
-    });
+    // Parallax background offsets
+    bgOffset = (bgOffset + speed * 0.3) % width;
+    bgOffset2 = (bgOffset2 + speed * 0.15) % width;
 
-    // Spawn
-    const last = stars[stars.length - 1];
-    if (!last || last.x < width + 100) {
-      const sx = width + 200 + Math.random() * 100;
-      stars.push({ x: sx, y: groundY - 45 - Math.random() * 90, collected: false, pulse: Math.random() * 6 });
+    // Spawn new objects
+    const lastD = diamonds[diamonds.length - 1];
+    if (!lastD || lastD.x < width + 60) {
+      const sx = width + 120 + Math.random() * 100;
+      diamonds.push(makeDiamond(sx));
+
       if (Math.random() < 0.65) {
-        const isSky = mode === "flying" && Math.random() < 0.5;
-        obstacles.push({ x: sx + 120, y: isSky ? groundY - 70 - Math.random() * 70 : groundY - 12, size: 13 + Math.random() * 7, angle: Math.random() * Math.PI, rot: (Math.random() - 0.5) * 0.04 });
+        obstacles.push(makeObstacle(sx + width * 0.15));
       }
-      if (mode === "running" && Math.random() < 0.14 && rockets.length === 0) {
-        rockets.push({ x: sx + 70, y: groundY - 55 - Math.random() * 40, pulse: 0 });
+
+      if (
+        mode === "running" &&
+        Math.random() < 0.12 &&
+        rockets.length === 0
+      ) {
+        rockets.push(makeRocket(sx + width * 0.1));
       }
     }
 
     // Player physics
+    const gravity = height * 0.0009;
+    const jumpForce = -(height * 0.023);
+    const doubleJumpForce = -(height * 0.019);
+
     if (mode === "running") {
-      player.vy += 0.22;
+      player.vy += gravity;
       player.y += player.vy;
       if (player.y + player.h >= groundY) {
         player.y = groundY - player.h;
@@ -162,58 +217,92 @@
         player.canDouble = true;
       }
     } else {
+      // Flying mode
       if (isHolding) {
-        player.vy -= 0.35;
+        player.vy -= gravity * 1.8;
+        // Rocket exhaust particles
         if (Math.random() < 0.7) {
           particles.push({
-            x: player.x - 10, y: player.y + player.h / 2,
-            vx: -scrollSpeed * 0.3 - 1.5 - Math.random(), vy: (Math.random() - 0.5) * 1.5,
-            size: Math.random() * 4 + 2, color: "rgba(255,110,0,0.8)", alpha: 1, life: 22,
+            x: player.x - 6,
+            y: player.y + player.h * 0.5,
+            vx: -speed * 0.4 - 1.2 - Math.random(),
+            vy: (Math.random() - 0.5) * 1.8,
+            size: Math.random() * 4 + 2,
+            color: "rgba(255,110,0,0.85)",
+            alpha: 1,
+            life: 20,
           });
         }
       } else {
-        player.vy += 0.18;
+        player.vy += gravity * 0.8;
       }
-      player.vy = Math.max(-4.5, Math.min(4.5, player.vy));
+      const maxVy = height * 0.018;
+      player.vy = Math.max(-maxVy, Math.min(maxVy, player.vy));
       player.y += player.vy;
-      if (player.y < 10) { player.y = 10; player.vy = 0; }
-      if (player.y + player.h > groundY) { player.y = groundY - player.h; player.vy = 0; }
+
+      if (player.y < 8) {
+        player.y = 8;
+        player.vy = 0;
+      }
+      if (player.y + player.h > groundY) {
+        player.y = groundY - player.h;
+        player.vy = 0;
+      }
 
       flightTimer -= 1 / 60;
       if (flightTimer <= 0) {
         mode = "running";
-        player.vy = -1.5;
-        for (let i = 0; i < 10; i++) {
+        player.vy = jumpForce * 0.3;
+        // Transition burst
+        for (let i = 0; i < 8; i++) {
           particles.push({
-            x: player.x, y: player.y + player.h / 2,
-            vx: (Math.random() - 0.5) * 4, vy: (Math.random() - 0.5) * 4,
-            size: Math.random() * 5 + 2, color: "rgba(255,255,255,0.4)", alpha: 0.8, life: 25,
+            x: player.x + player.w * 0.5,
+            y: player.y + player.h * 0.5,
+            vx: (Math.random() - 0.5) * 4,
+            vy: (Math.random() - 0.5) * 4,
+            size: Math.random() * 4 + 2,
+            color: "rgba(255,255,255,0.5)",
+            alpha: 0.8,
+            life: 22,
           });
         }
       }
     }
 
     // Move objects
-    stars.forEach(s => s.x -= scrollSpeed);
-    obstacles.forEach(a => { a.x -= scrollSpeed; a.angle += a.rot; });
-    rockets.forEach(r => r.x -= scrollSpeed);
+    diamonds.forEach((d) => (d.x -= speed));
+    obstacles.forEach((o) => (o.x -= speed));
+    rockets.forEach((r) => (r.x -= speed));
 
     // Particles
-    particles.forEach(p => { p.x += p.vx; p.y += p.vy; p.alpha -= 1 / p.life; });
-    particles = particles.filter(p => p.alpha > 0);
+    particles.forEach((p) => {
+      p.x += p.vx;
+      p.y += p.vy;
+      p.alpha -= 1 / p.life;
+    });
+    particles = particles.filter((p) => p.alpha > 0);
 
     // Collisions: diamonds
-    stars.forEach(s => {
-      if (!s.collected) {
-        const dx = s.x - (player.x + player.w / 2), dy = s.y - (player.y + player.h / 2);
-        if (Math.sqrt(dx * dx + dy * dy) < 24) {
-          s.collected = true;
+    const pCX = player.x + player.w * 0.5;
+    const pCY = player.y + player.h * 0.5;
+
+    diamonds.forEach((d) => {
+      if (!d.collected) {
+        const dx = d.x - pCX;
+        const dy = d.y - pCY;
+        if (Math.sqrt(dx * dx + dy * dy) < player.w * 0.7) {
+          d.collected = true;
           score += 15;
-          for (let i = 0; i < 7; i++) {
+          for (let i = 0; i < 8; i++) {
             particles.push({
-              x: s.x, y: s.y,
-              vx: (Math.random() - 0.5) * 3, vy: (Math.random() - 0.5) * 3,
-              size: Math.random() * 2.5 + 1, color: "#5ECFFF", alpha: 1, life: 16,
+              x: d.x,
+              y: d.y,
+              vx: (Math.random() - 0.5) * 3.5,
+              vy: (Math.random() - 0.5) * 3.5,
+              size: Math.random() * 2.5 + 1,
+              color: "#5ECFFF",
+              alpha: 1,
+              life: 18,
             });
           }
         }
@@ -222,35 +311,49 @@
 
     // Collisions: rockets
     rockets.forEach((r, i) => {
-      const dx = r.x - (player.x + player.w / 2), dy = r.y - (player.y + player.h / 2);
-      if (Math.sqrt(dx * dx + dy * dy) < 28) {
+      const dx = r.x - pCX;
+      const dy = r.y - pCY;
+      if (Math.sqrt(dx * dx + dy * dy) < player.w * 0.9) {
         mode = "flying";
-        flightTimer = 6;
-        player.y = r.y;
+        flightTimer = 5.5;
+        player.y = r.y - player.h * 0.3;
         rockets.splice(i, 1);
-        for (let j = 0; j < 12; j++) {
+        for (let j = 0; j < 14; j++) {
           particles.push({
-            x: player.x, y: player.y + player.h / 2,
-            vx: (Math.random() - 0.5) * 4 - 2, vy: (Math.random() - 0.5) * 4,
-            size: Math.random() * 4 + 2, color: "#FBBF24", alpha: 1, life: 22,
+            x: player.x + player.w * 0.5,
+            y: player.y + player.h * 0.5,
+            vx: (Math.random() - 0.5) * 5 - 1.5,
+            vy: (Math.random() - 0.5) * 5,
+            size: Math.random() * 4 + 2,
+            color: "#FBBF24",
+            alpha: 1,
+            life: 25,
           });
         }
       }
     });
 
     // Collisions: obstacles
-    obstacles.forEach(a => {
-      const dx = a.x - (player.x + player.w / 2), dy = a.y - (player.y + player.h / 2);
+    obstacles.forEach((o) => {
+      const dx = o.x - pCX;
+      const dy = o.y - pCY;
       const dist = Math.sqrt(dx * dx + dy * dy);
-      if (dist < a.size + 12) {
+      const hitDist = o.size * 0.45 + player.w * 0.35;
+      if (dist < hitDist) {
         if (mode === "flying") {
-          a.x = -200;
+          // Destroy obstacle
+          o.x = -500;
           score += 25;
-          for (let i = 0; i < 12; i++) {
+          for (let i = 0; i < 10; i++) {
             particles.push({
-              x: a.x + scrollSpeed, y: a.y,
-              vx: (Math.random() - 0.5) * 5, vy: (Math.random() - 0.5) * 5,
-              size: Math.random() * 3 + 1.5, color: "#8b7e74", alpha: 1, life: 28,
+              x: o.x + speed,
+              y: o.y,
+              vx: (Math.random() - 0.5) * 5,
+              vy: (Math.random() - 0.5) * 5,
+              size: Math.random() * 3 + 1.5,
+              color: o.color,
+              alpha: 1,
+              life: 25,
             });
           }
         } else {
@@ -259,13 +362,13 @@
       }
     });
 
-    // Cleanup
-    stars = stars.filter(s => s.x > -80 && !s.collected);
-    obstacles = obstacles.filter(a => a.x > -80);
-    rockets = rockets.filter(r => r.x > -80);
+    // Cleanup off-screen
+    diamonds = diamonds.filter((d) => d.x > -100 && !d.collected);
+    obstacles = obstacles.filter((o) => o.x > -100);
+    rockets = rockets.filter((r) => r.x > -100);
 
     // Animate frame
-    player.frame += 0.12;
+    player.frame += 0.14;
 
     updateHUD();
   }
@@ -273,11 +376,16 @@
   function triggerCrash() {
     gameOver = true;
     isHolding = false;
-    for (let i = 0; i < 20; i++) {
+    for (let i = 0; i < 22; i++) {
       particles.push({
-        x: player.x + player.w / 2, y: player.y + player.h / 2,
-        vx: (Math.random() - 0.5) * 5, vy: (Math.random() - 0.5) * 5,
-        size: Math.random() * 5 + 2, color: i % 2 === 0 ? "#f44336" : "#FBBF24", alpha: 1, life: 35,
+        x: player.x + player.w * 0.5,
+        y: player.y + player.h * 0.5,
+        vx: (Math.random() - 0.5) * 6,
+        vy: (Math.random() - 0.5) * 6,
+        size: Math.random() * 5 + 2,
+        color: i % 2 === 0 ? "#f44336" : "#FBBF24",
+        alpha: 1,
+        life: 35,
       });
     }
     updateHUD();
@@ -287,140 +395,167 @@
   function draw() {
     ctx.clearRect(0, 0, width, height);
 
-    // Sky gradient
-    const grad = ctx.createLinearGradient(0, 0, 0, height);
-    grad.addColorStop(0, "#050d1a");
-    grad.addColorStop(0.5, "#0a1e38");
-    grad.addColorStop(1, "#0f3055");
-    ctx.fillStyle = grad;
+    // -- Sky gradient --
+    const skyGrad = ctx.createLinearGradient(0, 0, 0, height);
+    skyGrad.addColorStop(0, "#040810");
+    skyGrad.addColorStop(0.35, "#081828");
+    skyGrad.addColorStop(0.65, "#0d3050");
+    skyGrad.addColorStop(1, "#145060");
+    ctx.fillStyle = skyGrad;
     ctx.fillRect(0, 0, width, height);
 
-    // Background stars
-    ctx.fillStyle = "#fff";
-    bgStars.forEach((s, i) => {
-      const fl = Math.sin(Date.now() * 0.003 + i) * 0.3 + 0.7;
-      ctx.globalAlpha = fl;
-      if (i % 5 === 0) {
-        // Diamond sparkle
-        ctx.beginPath();
-        ctx.moveTo(s.x, s.y - s.size * 2.5);
-        ctx.quadraticCurveTo(s.x, s.y, s.x + s.size * 2.5, s.y);
-        ctx.quadraticCurveTo(s.x, s.y, s.x, s.y + s.size * 2.5);
-        ctx.quadraticCurveTo(s.x, s.y, s.x - s.size * 2.5, s.y);
-        ctx.closePath();
-        ctx.fill();
-      } else {
-        ctx.fillRect(s.x, s.y, s.size, s.size);
+    // -- Parallax background image (city silhouette) --
+    if (bgImg.complete && bgImg.naturalWidth) {
+      const bgH = height * 0.55;
+      const bgW = (bgImg.naturalWidth / bgImg.naturalHeight) * bgH;
+      const bgY = groundY - bgH + height * 0.04;
+
+      // Draw two copies for seamless scroll
+      ctx.globalAlpha = 0.55;
+      const offset = -(bgOffset % bgW);
+      for (let x = offset; x < width + bgW; x += bgW) {
+        ctx.drawImage(bgImg, x, bgY, bgW, bgH);
       }
-    });
-    ctx.globalAlpha = 1;
-
-    // Clouds
-    ctx.fillStyle = "rgba(20,60,100,0.25)";
-    clouds.forEach(c => {
-      ctx.beginPath();
-      ctx.roundRect(c.x, c.y, c.w, c.h, c.h / 2);
-      ctx.fill();
-    });
-
-    // Ground surface
-    ctx.fillStyle = "#b8c0cc";
-    ctx.beginPath();
-    ctx.moveTo(0, height);
-    ctx.lineTo(0, groundY);
-    for (let x = 0; x <= width; x += 12) {
-      ctx.lineTo(x, groundY - 4 * Math.sin(x * 0.015 - scrollX * 0.012));
+      ctx.globalAlpha = 1;
     }
-    ctx.lineTo(width, height - 18);
-    ctx.lineTo(0, height - 18);
-    ctx.closePath();
-    ctx.fill();
 
-    // Bottom space band
-    ctx.fillStyle = "#050b14";
-    ctx.fillRect(0, height - 18, width, 18);
+    // -- Ground --
+    const groundH = height - groundY;
+    // Ground surface line
+    ctx.fillStyle = "rgba(200, 210, 220, 0.15)";
+    ctx.fillRect(0, groundY, width, 1);
 
-    // Diamonds (stars)
-    stars.forEach(s => {
-      if (s.collected) return;
-      s.pulse += 0.06;
-      const sc = 1 + 0.1 * Math.sin(s.pulse);
+    // Ground fill
+    const groundGrad = ctx.createLinearGradient(0, groundY, 0, height);
+    groundGrad.addColorStop(0, "rgba(20, 80, 96, 0.6)");
+    groundGrad.addColorStop(1, "rgba(8, 20, 30, 0.9)");
+    ctx.fillStyle = groundGrad;
+    ctx.fillRect(0, groundY + 1, width, groundH);
+
+    // Ground surface details
+    ctx.strokeStyle = "rgba(94, 207, 255, 0.08)";
+    ctx.lineWidth = 1;
+    for (let x = 0; x < width; x += 30) {
+      const waveY = groundY + 1 + Math.sin((x + scrollX) * 0.02) * 2;
+      ctx.beginPath();
+      ctx.moveTo(x, waveY);
+      ctx.lineTo(x + 15, waveY + Math.sin((x + 15 + scrollX) * 0.02) * 2);
+      ctx.stroke();
+    }
+
+    // -- Diamonds --
+    diamonds.forEach((d) => {
+      if (d.collected) return;
+      d.pulse += 0.06;
+      const sc = 1 + 0.1 * Math.sin(d.pulse);
+      const size = Math.max(16, Math.floor(height * 0.065));
+
       ctx.save();
-      ctx.translate(s.x, s.y);
+      ctx.translate(d.x, d.y);
       ctx.scale(sc, sc);
+
       if (diamondImg.complete && diamondImg.naturalWidth) {
-        ctx.drawImage(diamondImg, -12, -12, 24, 24);
+        ctx.drawImage(
+          diamondImg,
+          -size * 0.5,
+          -size * 0.5,
+          size,
+          size
+        );
       } else {
         ctx.fillStyle = "#5ECFFF";
         ctx.beginPath();
-        ctx.moveTo(0, -10);
-        ctx.lineTo(8, 0);
-        ctx.lineTo(0, 10);
-        ctx.lineTo(-8, 0);
+        ctx.moveTo(0, -size * 0.4);
+        ctx.lineTo(size * 0.35, 0);
+        ctx.lineTo(0, size * 0.4);
+        ctx.lineTo(-size * 0.35, 0);
         ctx.closePath();
         ctx.fill();
       }
+
       // Glow
-      ctx.shadowColor = "rgba(94,207,255,0.5)";
-      ctx.shadowBlur = 12;
+      ctx.shadowColor = "rgba(94,207,255,0.4)";
+      ctx.shadowBlur = 14;
       ctx.restore();
       ctx.shadowBlur = 0;
     });
 
-    // Rockets
-    rockets.forEach(r => {
+    // -- Rockets --
+    rockets.forEach((r) => {
       r.pulse += 0.06;
       const yOff = 3 * Math.sin(r.pulse);
+      const rSize = Math.max(24, Math.floor(height * 0.1));
+
       ctx.save();
       ctx.translate(r.x, r.y + yOff);
+
       if (rocketImg.complete && rocketImg.naturalWidth) {
-        ctx.drawImage(rocketImg, -18, -18, 36, 36);
+        ctx.drawImage(
+          rocketImg,
+          -rSize * 0.5,
+          -rSize * 0.5,
+          rSize,
+          rSize
+        );
       } else {
         ctx.fillStyle = "#FBBF24";
         ctx.beginPath();
-        ctx.arc(0, 0, 10, 0, Math.PI * 2);
+        ctx.arc(0, 0, rSize * 0.35, 0, Math.PI * 2);
         ctx.fill();
       }
+
       // Shield glow
-      const glow = 22 + 2 * Math.sin(Date.now() * 0.008);
-      const sg = ctx.createRadialGradient(0, 0, 8, 0, 0, glow);
-      sg.addColorStop(0, "rgba(251,191,36,0.2)");
+      const glowR = rSize * 0.7 + 2 * Math.sin(Date.now() * 0.008);
+      const sg = ctx.createRadialGradient(0, 0, rSize * 0.25, 0, 0, glowR);
+      sg.addColorStop(0, "rgba(251,191,36,0.25)");
       sg.addColorStop(1, "rgba(251,191,36,0)");
       ctx.fillStyle = sg;
       ctx.beginPath();
-      ctx.arc(0, 0, glow, 0, Math.PI * 2);
+      ctx.arc(0, 0, glowR, 0, Math.PI * 2);
       ctx.fill();
       ctx.restore();
     });
 
-    // Obstacles (asteroids)
-    obstacles.forEach(a => {
+    // -- Obstacles (colored blocks) --
+    obstacles.forEach((o) => {
       ctx.save();
-      ctx.translate(a.x, a.y);
-      ctx.rotate(a.angle);
-      ctx.fillStyle = "#7a6e64";
-      ctx.strokeStyle = "#1a130e";
-      ctx.lineWidth = 2;
+      ctx.translate(o.x, o.y);
+
+      // Block body
+      ctx.fillStyle = o.color;
+      const hw = o.size * 0.5;
+      const hh = o.size * 0.5;
       ctx.beginPath();
-      for (let i = 0; i < 8; i++) {
-        const ang = (i * Math.PI) / 4;
-        const r = a.size + Math.sin(ang * 3 + a.size) * 2;
-        ctx.lineTo(r * Math.cos(ang), r * Math.sin(ang));
+      ctx.roundRect(-hw, -hh, o.size, o.size, 3);
+      ctx.fill();
+
+      // Highlight edge
+      ctx.fillStyle = "rgba(255,255,255,0.15)";
+      ctx.fillRect(-hw, -hh, o.size, 3);
+
+      // Shadow edge
+      ctx.fillStyle = "rgba(0,0,0,0.3)";
+      ctx.fillRect(-hw, hh - 3, o.size, 3);
+
+      // Warning glow
+      const gDist = Math.abs(o.x - pCX());
+      if (gDist < width * 0.25) {
+        ctx.shadowColor = o.color;
+        ctx.shadowBlur = 8;
       }
-      ctx.closePath();
-      ctx.fill();
-      ctx.stroke();
-      // Craters
-      ctx.fillStyle = "#5c524b";
-      ctx.beginPath();
-      ctx.arc(-a.size / 3, -a.size / 4, a.size / 4, 0, Math.PI * 2);
-      ctx.fill();
+
       ctx.restore();
+      ctx.shadowBlur = 0;
     });
 
-    // Particles
-    particles.forEach(p => {
-      ctx.globalAlpha = p.alpha;
+    // Helper for player center
+    function pCX() {
+      return player.x + player.w * 0.5;
+    }
+
+    // -- Particles --
+    particles.forEach((p) => {
+      ctx.globalAlpha = Math.max(0, p.alpha);
       ctx.fillStyle = p.color;
       ctx.beginPath();
       ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
@@ -428,50 +563,79 @@
     });
     ctx.globalAlpha = 1;
 
-    // Player
+    // -- Player --
     if (!gameOver) {
       ctx.save();
-      ctx.translate(player.x + player.w / 2, player.y + player.h / 2);
+      ctx.translate(player.x + player.w * 0.5, player.y + player.h * 0.5);
 
       if (mode === "running") {
         const fi = Math.floor(player.frame) % charImgs.length;
         const img = charImgs[fi];
-        const bob = Math.sin(Date.now() * 0.018) * 1.5;
+        const bob = Math.sin(Date.now() * 0.016) * 1.5;
+
         if (img.complete && img.naturalWidth) {
-          ctx.drawImage(img, -player.w / 2, -player.h / 2 + bob, player.w, player.h);
+          ctx.drawImage(
+            img,
+            -player.w * 0.5,
+            -player.h * 0.5 + bob,
+            player.w,
+            player.h
+          );
         } else {
+          // Fallback circle
           ctx.fillStyle = "#FBBF24";
           ctx.beginPath();
-          ctx.arc(0, bob, player.w / 2, 0, Math.PI * 2);
+          ctx.arc(0, bob, player.w * 0.4, 0, Math.PI * 2);
           ctx.fill();
         }
       } else {
-        // Flying mode: draw rocket + shield
-        const tilt = player.vy * 0.06;
+        // Flying mode: show character + shield
+        const tilt = player.vy * 0.04;
         ctx.rotate(tilt);
-        if (rocketImg.complete && rocketImg.naturalWidth) {
-          ctx.drawImage(rocketImg, -22, -18, 44, 36);
+
+        const fi = Math.floor(player.frame) % charImgs.length;
+        const img = charImgs[fi];
+        if (img.complete && img.naturalWidth) {
+          ctx.drawImage(
+            img,
+            -player.w * 0.5,
+            -player.h * 0.5,
+            player.w,
+            player.h
+          );
         }
-        const glow = 26 + 2 * Math.sin(Date.now() * 0.008);
-        const sg = ctx.createRadialGradient(0, 0, 12, 0, 0, glow);
-        sg.addColorStop(0, "rgba(94,207,255,0.2)");
+
+        // Shield effect
+        const shieldR =
+          player.w * 0.7 + 2 * Math.sin(Date.now() * 0.008);
+        const sg = ctx.createRadialGradient(
+          0,
+          0,
+          player.w * 0.3,
+          0,
+          0,
+          shieldR
+        );
+        sg.addColorStop(0, "rgba(94,207,255,0.15)");
         sg.addColorStop(1, "rgba(94,207,255,0)");
         ctx.fillStyle = sg;
         ctx.beginPath();
-        ctx.arc(0, 0, glow, 0, Math.PI * 2);
+        ctx.arc(0, 0, shieldR, 0, Math.PI * 2);
         ctx.fill();
-        ctx.strokeStyle = "rgba(94,207,255,0.5)";
+
+        ctx.strokeStyle = "rgba(94,207,255,0.4)";
         ctx.lineWidth = 1.5;
         ctx.beginPath();
-        ctx.arc(0, 0, glow - 2, 0, Math.PI * 2);
+        ctx.arc(0, 0, shieldR - 2, 0, Math.PI * 2);
         ctx.stroke();
       }
+
       ctx.restore();
     }
   }
 
-  // ===== Loop =====
-  function loop() {
+  // ===== Game Loop =====
+  function loop(time) {
     update();
     draw();
     animId = requestAnimationFrame(loop);
@@ -481,18 +645,24 @@
   function handleStart(e) {
     if (e) e.preventDefault();
     if (gameOver) return;
+
     if (!isPlaying) {
       isPlaying = true;
       updateHUD();
     }
+
     isHolding = true;
 
     if (mode === "running") {
-      if (player.y + player.h >= groundY - 1) {
-        player.vy = -5.2;
+      const onGround = player.y + player.h >= groundY - 1;
+      const jumpForce = -(height * 0.023);
+      const doubleJumpForce = -(height * 0.019);
+
+      if (onGround) {
+        player.vy = jumpForce;
         player.canDouble = true;
       } else if (player.canDouble) {
-        player.vy = -4.5;
+        player.vy = doubleJumpForce;
         player.canDouble = false;
       }
     }
@@ -503,9 +673,12 @@
     isHolding = false;
   }
 
+  // Mouse events
   canvas.addEventListener("mousedown", handleStart);
   canvas.addEventListener("mouseup", handleEnd);
   canvas.addEventListener("mouseleave", handleEnd);
+
+  // Touch events
   canvas.addEventListener("touchstart", handleStart, { passive: false });
   canvas.addEventListener("touchend", handleEnd, { passive: false });
 
@@ -520,8 +693,13 @@
     });
   }
 
+  // ===== Visibility API — pause when tab hidden =====
+  document.addEventListener("visibilitychange", () => {
+    isPaused = document.hidden;
+  });
+
   // ===== Boot =====
   resize();
-  loop();
+  requestAnimationFrame(loop);
   window.addEventListener("resize", resize);
 })();
