@@ -272,17 +272,39 @@ h3 { font-size: 1.15rem; font-weight: 600; }
   background: linear-gradient(to bottom, var(--bg) 0%, transparent 15%, transparent 85%, var(--bg) 100%);
 }
 
-/* iPhone landscape frame */
+/* iPhone landscape frame — enhanced with Dynamic Island */
 .iphone-frame {
   position: relative;
   max-width: 900px;
   margin: 0 auto;
   border-radius: 2.2rem;
   padding: 10px;
-  background: linear-gradient(135deg, #1a1a22, #2a2a32);
+  background: linear-gradient(135deg, #1a1a22 0%, #0b0b10 50%, #1a1a22 100%);
   box-shadow: 0 30px 70px -20px rgba(0,0,0,0.8), inset 0 1px 0 rgba(255,255,255,0.06);
+  outline: 1px solid rgba(255,255,255,0.06);
 }
+/* Glow behind frame */
+.iphone-frame::before {
+  content: ""; position: absolute; inset: 0; z-index: -1;
+  border-radius: 2.5rem;
+  background: rgba(94,207,255,0.12);
+  filter: blur(40px);
+  transform: scale(1.08);
+  pointer-events: none;
+}
+
+/* Hardware buttons */
+.hw-btn {
+  position: absolute;
+  background: linear-gradient(to bottom, #0b0b10, #2a2a32);
+  border-radius: 2px;
+}
+.hw-vol1 { top: -3px; left: 60px; width: 45px; height: 3px; }
+.hw-vol2 { top: -3px; left: 120px; width: 60px; height: 3px; }
+.hw-pwr  { bottom: -3px; right: 80px; width: 72px; height: 3px; }
+
 .iphone-screen {
+  position: relative;
   border-radius: 1.65rem;
   overflow: hidden;
   aspect-ratio: 19.5 / 9;
@@ -292,6 +314,129 @@ h3 { font-size: 1.15rem; font-weight: 600; }
   width: 100%; height: 100%;
   object-fit: cover;
 }
+
+/* Dynamic Island */
+.dynamic-island {
+  position: absolute; left: 10px; top: 50%; transform: translateY(-50%);
+  z-index: 30;
+  height: 32%; width: 13px;
+  background: #000; border-radius: 999px;
+  box-shadow: 0 0 0 1.5px rgba(0,0,0,0.5), inset 0 0 0 1px rgba(255,255,255,0.04);
+}
+
+/* Screen reflection sheen */
+.screen-sheen {
+  position: absolute; inset: 0; z-index: 20;
+  pointer-events: none;
+  background: linear-gradient(135deg, rgba(255,255,255,0.06) 0%, transparent 40%, transparent 100%);
+  mix-blend-mode: overlay;
+}
+
+/* ===== Interactive Demo ===== */
+.demo-wrap {
+  position: relative;
+  width: 100%; height: 100%;
+  cursor: pointer;
+  user-select: none;
+  -webkit-user-select: none;
+}
+.demo-wrap canvas {
+  display: block; width: 100%; height: 100%;
+}
+
+/* HUD */
+.demo-hud {
+  position: absolute; top: 8px; left: 12px; right: 12px;
+  display: flex; justify-content: space-between; align-items: flex-start;
+  pointer-events: none; z-index: 15;
+  font-family: "Space Grotesk", system-ui, sans-serif;
+}
+.demo-hud-left, .demo-hud-right { display: flex; gap: 8px; align-items: center; }
+.demo-badge {
+  display: flex; align-items: center; gap: 5px;
+  padding: 3px 10px;
+  background: rgba(0,0,0,0.55);
+  border-radius: 999px;
+  border: 1px solid rgba(255,255,255,0.08);
+  backdrop-filter: blur(6px);
+  color: #fff; font-weight: 700;
+  font-size: 0.72rem;
+}
+.demo-star { font-size: 0.85rem; }
+.demo-fly {
+  background: rgba(6,78,100,0.55);
+  border-color: rgba(94,207,255,0.3);
+  color: var(--accent);
+  animation: pulse 1.5s ease-in-out infinite;
+}
+@keyframes pulse { 50% { opacity: 0.6; } }
+
+.demo-live {
+  display: flex; align-items: center; gap: 5px;
+  padding: 3px 8px;
+  background: rgba(94,207,255,0.1);
+  border: 1px solid rgba(94,207,255,0.25);
+  border-radius: 4px;
+  color: var(--accent); font-weight: 700;
+  font-size: 0.55rem; letter-spacing: 0.05em;
+  backdrop-filter: blur(6px);
+}
+.demo-dot {
+  display: inline-block; width: 5px; height: 5px;
+  background: var(--accent); border-radius: 50%;
+  animation: ping 1.5s ease-in-out infinite;
+}
+@keyframes ping { 50% { opacity: 0.3; transform: scale(0.6); } }
+
+/* Overlays */
+.demo-overlay, .demo-gameover {
+  position: absolute; inset: 0; z-index: 18;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  text-align: center; padding: 1rem;
+  pointer-events: none;
+  font-family: "Space Grotesk", system-ui, sans-serif;
+}
+.demo-overlay { background: rgba(0,0,0,0.4); }
+.demo-overlay-title {
+  font-size: clamp(1rem, 3vw, 1.8rem); font-weight: 700;
+  color: var(--accent); margin-bottom: 0.3rem;
+  text-shadow: 0 0 20px rgba(94,207,255,0.5);
+}
+.demo-overlay-sub {
+  font-size: 0.6rem; color: rgba(255,255,255,0.75);
+  text-transform: uppercase; letter-spacing: 0.1em;
+  max-width: 260px;
+}
+
+.demo-gameover {
+  background: rgba(0,0,0,0.75);
+  backdrop-filter: blur(8px);
+  pointer-events: auto;
+  cursor: default;
+}
+.demo-go-title {
+  font-size: clamp(1.2rem, 3.5vw, 2.2rem); font-weight: 700;
+  color: #f44336; margin-bottom: 0.5rem;
+  text-shadow: 0 0 20px rgba(244,67,54,0.5);
+}
+.demo-go-text {
+  font-size: 0.72rem; color: rgba(255,255,255,0.8);
+  max-width: 300px; margin-bottom: 0.8rem; line-height: 1.5;
+}
+.demo-retry-btn {
+  display: inline-block; padding: 6px 20px;
+  background: rgba(94,207,255,0.15); border: 1px solid rgba(94,207,255,0.35);
+  border-radius: 8px; color: var(--accent); font-weight: 600; font-size: 0.78rem;
+  cursor: pointer; transition: background 0.2s;
+  margin-bottom: 0.5rem;
+}
+.demo-retry-btn:hover { background: rgba(94,207,255,0.25); }
+.demo-appstore-link {
+  font-size: 0.6rem; color: rgba(255,255,255,0.5);
+  transition: color 0.2s;
+}
+.demo-appstore-link:hover { color: var(--accent); }
 
 /* Stats */
 .stats-row {

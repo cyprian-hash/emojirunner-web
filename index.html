@@ -139,8 +139,41 @@
 
       <div class="reveal">
         <div class="iphone-frame">
+          <!-- Hardware buttons -->
+          <div class="hw-btn hw-vol1"></div>
+          <div class="hw-btn hw-vol2"></div>
+          <div class="hw-btn hw-pwr"></div>
           <div class="iphone-screen">
-            <img src="/assets/screenshot-hero.png" alt="Emoji Runner gameplay — jumping over obstacles and collecting diamonds" loading="lazy" />
+            <!-- Dynamic Island -->
+            <div class="dynamic-island" aria-hidden="true"></div>
+            <!-- Screen reflection -->
+            <div class="screen-sheen" aria-hidden="true"></div>
+            <!-- Interactive Demo -->
+            <div id="demo-container" class="demo-wrap">
+              <canvas id="demo-canvas"></canvas>
+              <!-- HUD -->
+              <div class="demo-hud">
+                <div class="demo-hud-left">
+                  <div class="demo-badge"><span class="demo-star">💎</span><span id="demo-score">0</span></div>
+                  <div class="demo-badge demo-fly" id="demo-fly" style="display:none;"><span>⚡</span><span>0.0s</span></div>
+                </div>
+                <div class="demo-hud-right">
+                  <div class="demo-live"><span class="demo-dot"></span>PLAYABLE PREVIEW</div>
+                </div>
+              </div>
+              <!-- Tap to jump overlay -->
+              <div class="demo-overlay" id="demo-overlay">
+                <div class="demo-overlay-title">TAP TO JUMP</div>
+                <div class="demo-overlay-sub">Double tap to double jump. Grab rockets to fly!</div>
+              </div>
+              <!-- Game over overlay -->
+              <div class="demo-gameover" id="demo-gameover" style="display:none;">
+                <div class="demo-go-title">GAME OVER</div>
+                <p class="demo-go-text">You crashed! Download Emoji Runner to compete for high scores.</p>
+                <button id="demo-retry" class="demo-retry-btn">Try Again</button>
+                <a href="https://apps.apple.com/us/app/emoji-runner/id973972975" target="_blank" rel="noopener" class="demo-appstore-link">Download on the App Store →</a>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -233,6 +266,7 @@
 </footer>
 
 <script src="/script.js"></script>
+<script src="/demo.js"></script>
 <style>
 @keyframes slideUp {
   from { opacity: 0; transform: translateY(30px); }
